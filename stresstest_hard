@@ -1,0 +1,21 @@
+sv_cheats 1;
+mp_t_default_primary ""; 
+mp_ct_default_primary ""; 
+mp_t_default_secondary "";
+mp_ct_default_secondary "";
+mp_t_default_melee "";
+mp_ct_default_melee "";
+mp_t_default_grenades "weapon_smokegrenade weapon_hegrenade weapon_molotov";
+mp_ct_default_grenades "weapon_smokegrenade weapon_hegrenade weapon_molotov";
+mp_give_player_c4 0; bot_allow_grenades 1; mp_buy_anywhere 0; mp_buytime 0;
+ammo_grenade_limit_total 3; sv_infinite_ammo 1; mp_respawn_on_death_t 1;
+mp_respawn_on_death_ct 1;
+mp_freezetime 0;
+mp_roundtime 60;
+mp_roundtime_defuse 60;
+bot_quota 20;
+bot_quota_mode fill;
+mp_autoteambalance 0;
+mp_limitteams 0;
+mp_free_armor 2;
+mp_restartgame 1
