@@ -16,10 +16,10 @@ fi
 # Téléchargement / mise à jour des CFG GGLan
 echo "[GGLan] Mise à jour des fichiers CFG depuis GitHub..."
 mkdir -p game/csgo/cfg
-curl -s -L -o game/csgo/cfg/gglan.cfg https://raw.githubusercontent.com/DocR3D/GGLanCS2CFG/main/gglan.cfg
-curl -s -L -o game/csgo/cfg/overtime.cfg https://raw.githubusercontent.com/DocR3D/GGLanCS2CFG/main/overtime.cfg
-curl -s -L -o game/csgo/cfg/stresstest.cfg https://raw.githubusercontent.com/DocR3D/GGLanCS2CFG/main/stresstest.cfg
-curl -s -L -o game/csgo/cfg/warmup.cfg https://raw.githubusercontent.com/DocR3D/GGLanCS2CFG/main/warmup.cfg
+curl -s -f -L -o game/csgo/cfg/gglan.cfg https://raw.githubusercontent.com/DocR3D/GGLanCS2CFG/main/gglan.cfg
+curl -s -f -L -o game/csgo/cfg/overtime.cfg https://raw.githubusercontent.com/DocR3D/GGLanCS2CFG/main/overtime.cfg
+curl -s -f -L -o game/csgo/cfg/stresstest.cfg https://raw.githubusercontent.com/DocR3D/GGLanCS2CFG/main/stresstest.cfg
+curl -s -f -L -o game/csgo/cfg/warmup.cfg https://raw.githubusercontent.com/DocR3D/GGLanCS2CFG/main/warmup.cfg
 
 # Vérification rapide
 echo "[GGLan] CFGs téléchargés :"
