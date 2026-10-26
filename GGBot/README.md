@@ -1,6 +1,6 @@
 # ⚡ GGBot - Moteur d'Analyse CS2 & GGRating 3.0 (HLTV 3.0)
 
-GGBot est la suite d'analyse statistique et de calcul de performance de tournoi pour **Counter-Strike 2**.  
+GGBot est la suite complète d'analyse statistique, de calcul de performance et d'organisation de tournoi pour **Counter-Strike 2**.  
 Il intègre le moteur **GGRating 3.0**, une implémentation complète de l'architecture **HLTV Rating 3.0** fonctionnant par extraction tick-par-tick des démos GOTV (`.dem`) via `demoparser2` (écrit en Rust).
 
 ---
@@ -49,15 +49,15 @@ Prérequis :
 
 ---
 
-## 🚀 Utilisation
+## 🚀 Outils de la Suite GGBot
 
-### 1. Analyser un match unique (.dem)
+### 1. `ggbot_ggrating.py` - Analyser un match unique (.dem)
 ```bash
 python ggbot_ggrating.py --demo "chemin/vers/votre_match.dem"
 ```
 Affiche en console le tableau détaillé du match (GGRating 3.0, HLTV 1.0, ADR, KAST%, Swing/R, First K/D, Multi-kills).
 
-### 2. Traiter un tournoi complet
+### 2. `ggbot_batch_tournament.py` - Traitement global du tournoi
 ```bash
 python ggbot_batch_tournament.py
 ```
@@ -66,19 +66,39 @@ python ggbot_batch_tournament.py
 - Normalise le GGRating 3.0 à **1.00 de moyenne**.
 - Génère le classement général en CSV et JSON.
 
-### 3. Générer le Dashboard HTML interactif
+### 3. `ggbot_fun_and_maps.py` - Statistiques de maps & Trophées insolites
+```bash
+python ggbot_fun_and_maps.py
+```
+- Analyse l'équilibrage CT / T de chaque carte jouée, le taux d'overtimes et les moyennes de rounds.
+- Extrait les statistiques fun : massacre de poules sur Inferno, frags au couteau, électrocutions au Zeus x27, morts de la bombe C4, smoke hackers, no-scopes sniper, kills aveuglés (Ray Charles) et record de distance.
+
+### 4. `ggbot_html_dashboard.py` - Générateur de Dashboard interactif
 ```bash
 python ggbot_html_dashboard.py
 ```
-Crée un rapport HTML complet avec :
-- Tri dynamique sur toutes les colonnes (ADR, KAST%, Swing, Frags, Ratings...).
+Crée un rapport HTML autonome ultra-complet (`rapport_stats_gglan19_ggrating.html`) avec :
+- **Tri dynamique par clic** sur toutes les colonnes (ADR, KAST%, Swing, Frags, Ratings, Différence de rounds...).
 - Barre de recherche en temps réel par joueur ou équipe.
+- Section dédiée à l'équilibrage CT / T des cartes jouées.
+- Palmarès insolite & Fun Awards en cartes graphiques.
 - Comparaison côte à côte GGRating 3.0 vs HLTV 1.0.
+
+### 5. `ggbot_google_drive_pack.py` - Préparation du Pack de Partage Google Drive
+```bash
+python ggbot_google_drive_pack.py
+```
+- Construit automatiquement une archive ZIP par équipe contenant tous leurs matchs `.dem` officiels, le récapitulatif textuel de leurs rencontres et le dashboard HTML.
+- Génère le README officiel pour les capitaines d'équipes et les joueurs.
 
 ---
 
 ## 📊 Livrables générés
 
 - `01_classement_general_joueurs_ggrating.csv` : Statistiques complètes par joueur.
+- `02_classement_equipes.csv` : Classement général des équipes.
 - `stats_gglan19_ggrating.json` : Données structurées et baselines du tournoi.
+- `stats_gglan19_fun_and_maps.json` : Données cartographiques et trophées insolites.
 - `rapport_stats_gglan19_ggrating.html` : Dashboard interactif autonome (fonctionne 100% hors-ligne).
+- `Demos_Par_Equipe/` : 13 archives ZIP prêtes à être partagées sur Google Drive.
+

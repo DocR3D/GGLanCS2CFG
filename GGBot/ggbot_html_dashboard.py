@@ -6,35 +6,41 @@ import csv
 sys.stdout.reconfigure(encoding='utf-8')
 
 stats_dir = r"C:\Users\yonne\Desktop\GGLan\GGLan #19\Stats"
-json_path = os.path.join(stats_dir, "json", "stats_gglan19_ggrating.json")
+ggrating_json_path = os.path.join(stats_dir, "json", "stats_gglan19_ggrating.json")
 matches_json_path = os.path.join(stats_dir, "json", "stats_gglan19_complete.json")
+fun_json_path = os.path.join(stats_dir, "json", "stats_gglan19_fun_and_maps.json")
 
-with open(json_path, "r", encoding="utf-8") as f:
+with open(ggrating_json_path, "r", encoding="utf-8") as f:
     ggrating_data = json.load(f)
 
 with open(matches_json_path, "r", encoding="utf-8") as f:
     complete_data = json.load(f)
 
+with open(fun_json_path, "r", encoding="utf-8") as f:
+    fun_data = json.load(f)
+
 players = ggrating_data["players"]
 teams = complete_data["teams"]
 matches = complete_data["matches"]
 baselines = ggrating_data["baselines"]
+maps_list = fun_data["maps"]
+awards = fun_data["fun_awards"]
 
 total_kills = sum(p["kills"] for p in players)
 total_aces = sum(p["k5"] for p in players)
 total_matches = len(matches)
-
 top_ggrating = sorted(players, key=lambda x: x["ggrating"], reverse=True)[:10]
 
 html = f"""<!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>GGLan #19 - Rapport Officiel GGRating 3.0 (HLTV 3.0 CS2)</title>
+    <title>GGLan #19 - Dashboard Officiel GGRating 3.0 & Stats Fun CS2</title>
     <style>
         :root {{
             --bg: #0b0f19;
             --card-bg: #151d30;
+            --card-sub: #111827;
             --border: #222f4c;
             --text: #f1f5f9;
             --text-muted: #94a3b8;
@@ -43,6 +49,7 @@ html = f"""<!DOCTYPE html>
             --success: #10b981;
             --danger: #ef4444;
             --purple: #a855f7;
+            --pink: #ec4899;
             --cyan: #06b6d4;
         }}
         * {{ box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }}
@@ -65,6 +72,8 @@ html = f"""<!DOCTYPE html>
         
         .grid-2 {{ display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem; }}
         @media(max-width: 1050px) {{ .grid-2 {{ grid-template-columns: 1fr; }} }}
+
+        .grid-3 {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }}
         
         .card {{ background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; }}
         table {{ width: 100%; border-collapse: collapse; font-size: 0.91rem; text-align: left; }}
@@ -98,14 +107,59 @@ html = f"""<!DOCTYPE html>
         .methodo-grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-top: 0.75rem; }}
         .methodo-pill {{ background: #0e1526; border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem; }}
         .methodo-pill strong {{ color: var(--primary); display: block; margin-bottom: 0.2rem; }}
+
+        /* Fun Awards Styling */
+        .award-card {{ background: var(--card-sub); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; display: flex; flex-direction: column; justify-content: space-between; }}
+        .award-header {{ display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; }}
+        .award-icon {{ font-size: 1.8rem; }}
+        .award-title {{ font-size: 1.1rem; font-weight: 700; color: var(--text); }}
+        .award-subtitle {{ font-size: 0.8rem; color: var(--text-muted); }}
+        .award-list {{ list-style: none; }}
+        .award-item {{ display: flex; justify-content: space-between; padding: 0.4rem 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.9rem; }}
+        .award-item:last-child {{ border-bottom: none; }}
+        .award-name {{ font-weight: 600; color: var(--primary); }}
+        .award-val {{ font-weight: 700; color: var(--accent); }}
+
+        .badge-map {{ display: inline-block; padding: 0.2rem 0.6rem; border-radius: 6px; font-weight: 700; font-size: 0.85rem; }}
+        .badge-ct {{ background: rgba(56, 189, 248, 0.2); color: var(--primary); }}
+        .badge-t {{ background: rgba(245, 158, 11, 0.2); color: var(--accent); }}
+        .badge-eq {{ background: rgba(16, 185, 129, 0.2); color: var(--success); }}
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>⚡ GGLan #19 - Classement Officiel GGRating 3.0</h1>
+            <h1>⚡ GGLan #19 - Dashboard Officiel GGRating 3.0 & Stats Insolites</h1>
             <p>Moteur HLTV 3.0 CS2 complet • Analyse tick-par-tick de 100% des 70 démos officielles</p>
         </header>
+
+        <!-- KPI Globaux -->
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <div class="kpi-val" style="color: var(--primary);">{total_matches}</div>
+                <div class="kpi-label">Matchs GOTV Analysés</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-val" style="color: var(--success);">{len(players)}</div>
+                <div class="kpi-label">Joueurs Qualifiés</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-val" style="color: var(--accent);">{len(teams)}</div>
+                <div class="kpi-label">Équipes Engagées</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-val">{total_kills}</div>
+                <div class="kpi-label">Frags Reconnus</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-val" style="color: #ec4899;">{total_aces}</div>
+                <div class="kpi-label">Aces Confirmés</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-val" style="color: #a855f7;">{len(awards['knife_kills'])}</div>
+                <div class="kpi-label">Kills au Cut (Couteau)</div>
+            </div>
+        </div>
 
         <!-- Méthodologie GGRating 3.0 -->
         <div class="methodo-box">
@@ -136,41 +190,6 @@ html = f"""<!DOCTYPE html>
                     <strong>6. Multi-Kills (8%)</strong>
                     Fréquence des 2k, 3k, 4k et Aces, rééquilibrée pour éviter les doublons avec le Swing.
                 </div>
-            </div>
-        </div>
-
-        <div class="banner-filter">
-            <div>
-                <strong>🎯 Baselines du Tournoi :</strong> eADR Moyenne = <strong>{baselines['mean_eadr']}</strong> • KAST Moyen = <strong>{baselines['mean_kast']}%</strong> • eKPR Moyen = <strong>{baselines['mean_ekpr']}</strong>
-            </div>
-            <div>
-                <strong>⚖️ Calibration :</strong> GGRating calibré à <strong>1.00</strong> de moyenne pour un joueur standard
-            </div>
-            <div>
-                <strong>💾 Données :</strong> 70 démos GOTV complètes analysées (100% du tournoi)
-            </div>
-        </div>
-        
-        <div class="kpi-grid">
-            <div class="kpi-card">
-                <div class="kpi-val" style="color: var(--primary);">{total_matches}</div>
-                <div class="kpi-label">Matchs GOTV Analysés</div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-val" style="color: var(--success);">{len(players)}</div>
-                <div class="kpi-label">Joueurs Qualifiés</div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-val" style="color: var(--accent);">{len(teams)}</div>
-                <div class="kpi-label">Équipes Engagées</div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-val">{total_kills}</div>
-                <div class="kpi-label">Frags Reconnus</div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-val" style="color: #ec4899;">{total_aces}</div>
-                <div class="kpi-label">Aces Confirmés</div>
             </div>
         </div>
 
@@ -257,6 +276,197 @@ for i, t in enumerate(teams, 1):
 html += """
                     </tbody>
                 </table>
+            </div>
+        </div>
+
+        <!-- Statistiques des Cartes CS2 -->
+        <div class="card">
+            <div class="section-title">
+                <span>🗺️ Statistiques des Cartes Jouées (Équilibre CT / T)</span>
+                <span class="hint-sort">Cliquez sur un en-tête pour trier</span>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th class="sortable">Map</th>
+                        <th class="sortable">Matchs Joués</th>
+                        <th class="sortable">Rounds Totaux</th>
+                        <th class="sortable">Moyenne Rounds/Match</th>
+                        <th class="sortable">Victoires CT</th>
+                        <th class="sortable">Victoires T</th>
+                        <th class="sortable">CT Win %</th>
+                        <th class="sortable">T Win %</th>
+                        <th class="sortable">Overtimes</th>
+                        <th class="sortable">Tendance</th>
+                    </tr>
+                </thead>
+                <tbody>
+"""
+
+for m in maps_list:
+    bias_cls = "badge-ct" if m["bias"] == "Avantage CT" else ("badge-t" if m["bias"] == "Avantage T" else "badge-eq")
+    html += f"""<tr>
+        <td style="font-weight:700; color:var(--primary);">{m['map_name']}</td>
+        <td><strong>{m['matches_played']}</strong></td>
+        <td>{m['total_rounds']}</td>
+        <td>{m['avg_rounds']}</td>
+        <td style="color:var(--primary);">{m['ct_wins']}</td>
+        <td style="color:var(--accent);">{m['t_wins']}</td>
+        <td style="font-weight:700; color:var(--primary);">{m['ct_win_pct']}%</td>
+        <td style="font-weight:700; color:var(--accent);">{m['t_win_pct']}%</td>
+        <td>{m['overtimes']}</td>
+        <td><span class="badge-map {bias_cls}">{m['bias']}</span></td>
+    </tr>"""
+
+html += """
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Palmarès Insolite / Fun Awards -->
+        <div class="card">
+            <div class="section-title">
+                <span>🏆 Le Palmarès Insolite & Stats Fun de la GGLan #19</span>
+                <span class="hint-sort">Données extraites des 70 démos GOTV</span>
+            </div>
+            <div class="grid-3">
+                <!-- Boucher de Poules -->
+                <div class="award-card">
+                    <div class="award-header">
+                        <span class="award-icon">🐔</span>
+                        <div>
+                            <div class="award-title">Le Boucher de Poules</div>
+                            <div class="award-subtitle">Massacre de volatiles sur Inferno</div>
+                        </div>
+                    </div>
+                    <ul class="award-list">
+"""
+
+for item in awards["top_chickens"][:5]:
+    html += f"""<li class="award-item"><span class="award-name">{item['pseudo']}</span><span class="award-val">{item['count']} poules</span></li>"""
+
+html += """
+                    </ul>
+                </div>
+
+                <!-- Morts de la Bombe -->
+                <div class="award-card">
+                    <div class="award-header">
+                        <span class="award-icon">💣</span>
+                        <div>
+                            <div class="award-title">Le Prix Kamikaze</div>
+                            <div class="award-subtitle">Morts dans l'explosion du C4</div>
+                        </div>
+                    </div>
+                    <ul class="award-list">
+"""
+
+for item in awards["top_bomb_deaths"][:5]:
+    html += f"""<li class="award-item"><span class="award-name">{item['pseudo']}</span><span class="award-val">{item['count']} explosions</span></li>"""
+
+html += """
+                    </ul>
+                </div>
+
+                <!-- Kills à travers la smoke -->
+                <div class="award-card">
+                    <div class="award-header">
+                        <span class="award-icon">💨</span>
+                        <div>
+                            <div class="award-title">Le "Smoke Hacker"</div>
+                            <div class="award-subtitle">Kills à travers la fumée</div>
+                        </div>
+                    </div>
+                    <ul class="award-list">
+"""
+
+for item in awards["top_smoke"][:5]:
+    html += f"""<li class="award-item"><span class="award-name">{item['pseudo']}</span><span class="award-val">{item['count']} kills</span></li>"""
+
+html += """
+                    </ul>
+                </div>
+
+                <!-- No-Scope Sniper -->
+                <div class="award-card">
+                    <div class="award-header">
+                        <span class="award-icon">🎯</span>
+                        <div>
+                            <div class="award-title">Le Roi du No-Scope</div>
+                            <div class="award-subtitle">Frags au sniper sans viser</div>
+                        </div>
+                    </div>
+                    <ul class="award-list">
+"""
+
+for item in awards["top_noscope"][:5]:
+    html += f"""<li class="award-item"><span class="award-name">{item['pseudo']}</span><span class="award-val">{item['count']} no-scopes</span></li>"""
+
+html += """
+                    </ul>
+                </div>
+
+                <!-- Aveugle / Flashé -->
+                <div class="award-card">
+                    <div class="award-header">
+                        <span class="award-icon">🕶️</span>
+                        <div>
+                            <div class="award-title">Le Prix Ray Charles</div>
+                            <div class="award-subtitle">Kills réalisés totalement aveuglé</div>
+                        </div>
+                    </div>
+                    <ul class="award-list">
+"""
+
+for item in awards["top_blind"][:5]:
+    html += f"""<li class="award-item"><span class="award-name">{item['pseudo']}</span><span class="award-val">{item['count']} kills flashé</span></li>"""
+
+html += """
+                    </ul>
+                </div>
+
+                <!-- Kills au Zeus Taser -->
+                <div class="award-card">
+                    <div class="award-header">
+                        <span class="award-icon">⚡</span>
+                        <div>
+                            <div class="award-title">L'Électricien (Zeus x27)</div>
+                            <div class="award-subtitle">4 électrocutions en LAN</div>
+                        </div>
+                    </div>
+                    <ul class="award-list">
+"""
+
+for item in awards["taser_kills"]:
+    html += f"""<li class="award-item"><span class="award-name">{item['killer']}</span><span class="award-val">⚡ {item['victim']} ({item['map']})</span></li>"""
+
+html += f"""
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Focus Cuts et Tir le plus loin -->
+            <div style="background:var(--card-sub); border:1px solid var(--border); border-radius:10px; padding:1.25rem; margin-top:1rem;">
+                <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:1.5rem;">
+                    <div>
+                        <strong style="color:var(--primary); font-size:1.05rem;">🏹 Record du Tir le Plus Lointain :</strong>
+                        <div style="margin-top:0.35rem; font-size:0.95rem;">
+                            <strong>{awards['max_distance']['dist']} mètres</strong> réalisé par 
+                            <span style="color:var(--accent); font-weight:700;">{awards['max_distance']['killer']}</span> sur 
+                            <span>{awards['max_distance']['victim']}</span> à l'AWP sur <em>{awards['max_distance']['map']}</em> (Match #{awards['max_distance']['match_id']}).
+                        </div>
+                    </div>
+                    <div>
+                        <strong style="color:var(--pink); font-size:1.05rem;">🔪 Les 15 Kills au Couteau du Tournoi :</strong>
+                        <div style="margin-top:0.35rem; font-size:0.9rem; color:var(--text-muted); max-height:100px; overflow-y:auto;">
+"""
+for k in awards["knife_kills"]:
+    html += f"""<div>• <strong style="color:var(--text);">{k['killer']}</strong> a cutté <strong>{k['victim']}</strong> ({k['weapon']}) sur <em>{k['map']}</em> (Match #{k['match_id']})</div>"""
+
+html += """
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -410,27 +620,23 @@ html += """
 
         function parseCellValue(text) {
             text = text.trim();
-            // Supprimer le '#' pour les IDs
             if (text.startsWith("#")) {
                 var num = parseFloat(text.substring(1));
                 if (!isNaN(num)) return num;
             }
-            // Pourcentage (ex: 84.5%, +7.2%, -3.1%)
             if (text.endsWith("%")) {
                 var clean = text.replace("%", "").replace("+", "");
                 var num = parseFloat(clean);
                 if (!isNaN(num)) return num;
             }
-            // Ratio FK/FD (ex: 14/8)
             if (text.indexOf("/") > -1 && text.split("/").length === 2) {
                 var parts = text.split("/");
                 var p0 = parseFloat(parts[0]);
                 var p1 = parseFloat(parts[1]);
                 if (!isNaN(p0) && !isNaN(p1)) {
-                    return (p0 * 100) - p1; // Pondération valorisant les FK positifs
+                    return (p0 * 100) - p1;
                 }
             }
-            // Score match (ex: 13 - 10)
             if (text.indexOf("-") > -1 && text.split("-").length === 2) {
                 var parts = text.split("-");
                 var s0 = parseFloat(parts[0].trim());
@@ -439,13 +645,11 @@ html += """
                     return s0 - s1;
                 }
             }
-            // Nombre flottant / entier (ex: 1.35, +50, -22)
             var cleanNum = text.replace("+", "");
             var num = parseFloat(cleanNum);
             if (!isNaN(num) && (String(num) === cleanNum || String(num) === cleanNum.replace(/^0+/, "") || !isNaN(Number(cleanNum)))) {
                 return num;
             }
-            // Texte alphabétique standard
             return text.toLowerCase();
         }
 
@@ -454,12 +658,10 @@ html += """
             var rows = Array.from(tbody.querySelectorAll("tr"));
             var isAsc = clickedHeader.classList.contains("sorted-desc");
 
-            // Réinitialiser les indicateurs de tous les en-têtes du tableau
             table.querySelectorAll("th.sortable").forEach(function(th) {
                 th.classList.remove("sorted-asc", "sorted-desc");
             });
 
-            // Appliquer la nouvelle direction
             if (isAsc) {
                 clickedHeader.classList.add("sorted-asc");
             } else {
@@ -481,7 +683,6 @@ html += """
                 }
             });
 
-            // Réinsérer les lignes triées
             rows.forEach(function(row) {
                 tbody.appendChild(row);
             });
@@ -499,4 +700,4 @@ default_report_path = os.path.join(stats_dir, "rapport_stats_gglan19.html")
 with open(default_report_path, "w", encoding="utf-8") as f:
     f.write(html)
 
-print("Rapports HTML mis à jour avec le système de tri interactif par catégorie !")
+print("Dashboard enrichi avec succès avec les sections Maps et Trophées Insolites !")
