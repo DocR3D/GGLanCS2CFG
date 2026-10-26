@@ -29,7 +29,7 @@ os.makedirs(matchs_dir, exist_ok=True)
 os.makedirs(stats_pages_dir, exist_ok=True)
 os.makedirs(players_dir, exist_ok=True)
 
-print("=== DEBUT DE L'EXPORTATION DES PAGES BRUTES EBOT ===")
+print("=== EXPORTATION PUREMENT NATIVE EBOT (DESIGN 100% AUTHENTIQUE) ===")
 print(f"Total Matchs : {len(matches)}")
 print(f"Total Joueurs : {len(players)}")
 
@@ -55,392 +55,320 @@ for p in players:
     fname = f"player_{p_name}_{clean_steamid_filename(sid)}.html"
     player_file_map[sid] = fname
 
-def rewrite_html_depth1(html, banner_title="GGLan #19 - Archive eBot"):
+def rewrite_ebot_native(html, depth=1):
     if not html:
         return ""
+    rel = "../" if depth == 1 else ""
     
-    # Static assets depth 1 (from matchs/, stats/, players/)
-    html = html.replace('href="/css/', 'href="../css/')
-    html = html.replace('src="/js/', 'src="../js/')
-    html = html.replace('src="/images/', 'src="../images/')
-    html = html.replace('url(/images/', 'url(../images/')
-    html = html.replace('url(http://10.101.11.200/images/', 'url(../images/')
-    html = html.replace('href="/favicon.png"', 'href="../favicon.png"')
+    # 1. Static assets paths
+    html = html.replace('href="/css/', f'href="{rel}css/')
+    html = html.replace('src="/js/', f'src="{rel}js/')
+    html = html.replace('src="/images/', f'src="{rel}images/')
+    html = html.replace('url(/images/', f'url({rel}images/')
+    html = html.replace('url(http://10.101.11.200/images/', f'url({rel}images/')
+    html = html.replace('href="/favicon.png"', f'href="{rel}favicon.png"')
     
-    # Internal links
-    html = html.replace('href="/"', 'href="../index.html"')
-    html = html.replace('href="/stats"', 'href="../stats/stats_overview.html"')
-    html = html.replace('href="/stats/global"', 'href="../stats/stats_global.html"')
-    html = html.replace('href="/stats/maps"', 'href="../stats/stats_maps.html"')
-    html = html.replace('href="/stats/weapons"', 'href="../stats/stats_weapons.html"')
+    # 2. Native Navigation links
+    html = html.replace('href="/"', f'href="{rel}index.html"')
+    html = html.replace('href="/matchs/archived/1"', f'href="{rel}index.html"')
+    html = html.replace('href="/matchs/current/1"', f'href="{rel}index.html"')
+    html = html.replace('href="/matchs/current"', f'href="{rel}index.html"')
+    html = html.replace('href="/stats"', f'href="{rel}stats/stats_overview.html"')
+    html = html.replace('href="/stats/global"', f'href="{rel}stats/stats_global.html"')
+    html = html.replace('href="/stats/maps"', f'href="{rel}stats/stats_maps.html"')
+    html = html.replace('href="/stats/weapons"', f'href="{rel}stats/stats_weapons.html"')
+    html = html.replace('href="/seasons"', f'href="{rel}index.html"')
     
-    # Rewrite match links
-    html = re.sub(r'href="/matchs/view/(\d+)"', r'href="../matchs/match_\1.html"', html)
+    # 3. Match links
+    html = re.sub(r'href="/matchs/view/(\d+)"', rf'href="{rel}matchs/match_\1.html"', html)
     
-    # Rewrite player links
+    # 4. Interactive goToMatch() search box from eBot sidebar
+    html = html.replace('document.location.href = "/matchs/view/"+id;', f'document.location.href = "{rel}matchs/match_"+id+".html";')
+    
+    # 5. Player links
     for sid, fname in player_file_map.items():
         quoted_sid = urllib.parse.quote(sid)
-        html = html.replace(f'href="/stats/players/{quoted_sid}"', f'href="../players/{fname}"')
-        html = html.replace(f'href="/stats/players/{sid}"', f'href="../players/{fname}"')
+        html = html.replace(f'href="/stats/players/{quoted_sid}"', f'href="{rel}players/{fname}"')
+        html = html.replace(f'href="/stats/players/{sid}"', f'href="{rel}players/{fname}"')
     
-    # In case unmapped player links exist
-    html = re.sub(r'href="/stats/players/([^"]+)"', r'href="../stats/stats_global.html"', html)
+    html = re.sub(r'href="/stats/players/([^"]+)"', rf'href="{rel}stats/stats_global.html"', html)
     
-    # Add top navigation banner
-    banner = f"""
-    <div style="background:#0f172a; color:#38bdf8; padding:10px 20px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; font-size:14px; border-bottom:2px solid #38bdf8; display:flex; justify-content:space-between; align-items:center; position:sticky; top:0; z-index:99999; box-shadow:0 2px 8px rgba(0,0,0,0.5);">
-        <span>📌 <strong>{banner_title}</strong> (Sauvegarde officielle 100% hors-ligne)</span>
-        <div style="display:flex; gap:15px;">
-            <a href="../stats/stats_weapons.html" style="color:#f59e0b; text-decoration:none; font-weight:600;">🔫 Top Armes</a>
-            <a href="../stats/stats_maps.html" style="color:#10b981; text-decoration:none; font-weight:600;">🗺️ Stats Maps</a>
-            <a href="../stats/stats_global.html" style="color:#c084fc; text-decoration:none; font-weight:600;">🌍 Classement Global</a>
-            <a href="../index.html" style="background:#38bdf8; color:#0f172a; padding:3px 10px; border-radius:4px; text-decoration:none; font-weight:bold;">← Accueil Portail eBot</a>
-        </div>
-    </div>
-    """
-    
-    # Insert banner after <body>
-    if "<body" in html:
-        parts = html.split("<body", 1)
-        # find end of body tag
-        body_rest = parts[1]
-        tag_end = body_rest.find(">")
-        html = parts[0] + "<body" + body_rest[:tag_end+1] + banner + body_rest[tag_end+1:]
-    else:
-        html = banner + html
-        
     return html
 
-# 1. Fetch Matches
+# 1. Export Matchs (Design 100% d'origine sans bandeau)
 def export_match(m):
     mid = str(m["match_id"])
-    ta, tb = m["equipe_a"], m["equipe_b"]
-    mp = m["maps_jouees"] or "CS2"
     url = f"{base_url}/matchs/view/{mid}"
     raw = fetch_url(url)
     if raw:
-        banner = f"Match #{mid} : {ta} ({m['score_a']}) vs ({m['score_b']}) {tb} - {mp}"
-        processed = rewrite_html_depth1(raw, banner)
+        processed = rewrite_ebot_native(raw, depth=1)
         out_path = os.path.join(matchs_dir, f"match_{mid}.html")
         with open(out_path, "w", encoding="utf-8") as f:
             f.write(processed)
         return mid, True
     return mid, False
 
-print("\n1. Téléchargement des 70 pages de matchs...")
+print("\n1. Traitement des 70 pages de matchs (design natif eBot)...")
 t0 = time.time()
 with ThreadPoolExecutor(max_workers=6) as executor:
     results = list(executor.map(export_match, matches))
 ok_matches = sum(1 for _, ok in results if ok)
-print(f"-> {ok_matches}/{len(matches)} matchs exportés en {time.time() - t0:.1f}s")
+print(f"-> {ok_matches}/{len(matches)} matchs traités en {time.time() - t0:.1f}s")
 
-# 2. Fetch General Stats Pages
+# 2. Export General Stats Pages (Design 100% d'origine)
 stats_targets = [
-    ("stats_weapons.html", f"{base_url}/stats/weapons", "Statistiques Officielles des Armes eBot (Top Kills, HS%)"),
-    ("stats_maps.html", f"{base_url}/stats/maps", "Statistiques Officielles des Cartes eBot (Fois jouées, Winrate CT/T)"),
-    ("stats_global.html", f"{base_url}/stats/global", "Classement Général des Joueurs eBot (Frags, Morts, Ratios, Entry Kills)"),
-    ("stats_overview.html", f"{base_url}/stats", "Vue d'Ensemble des Statistiques du Tournoi eBot")
+    ("stats_weapons.html", f"{base_url}/stats/weapons"),
+    ("stats_maps.html", f"{base_url}/stats/maps"),
+    ("stats_global.html", f"{base_url}/stats/global"),
+    ("stats_overview.html", f"{base_url}/stats")
 ]
 
-print("\n2. Téléchargement des pages de statistiques globales et d'armes...")
-for fname, url, banner in stats_targets:
+print("\n2. Traitement des pages de statistiques (design natif eBot)...")
+for fname, url in stats_targets:
     raw = fetch_url(url)
     if raw:
-        processed = rewrite_html_depth1(raw, banner)
+        processed = rewrite_ebot_native(raw, depth=1)
         out_path = os.path.join(stats_pages_dir, fname)
         with open(out_path, "w", encoding="utf-8") as f:
             f.write(processed)
-        print(f"-> {fname} exporté avec succès.")
+        print(f"-> {fname} sauvegardé.")
 
-# 3. Fetch Player Pages
+# 3. Export Player Pages (Design 100% d'origine)
 def export_player(p):
     sid = p["steamid"]
-    pseudo = p["pseudo"]
     fname = player_file_map[sid]
     quoted_sid = urllib.parse.quote(sid)
     url = f"{base_url}/stats/players/{quoted_sid}"
     raw = fetch_url(url)
     if raw:
-        banner = f"Fiche Joueur : {pseudo} ({p['team_name']}) - {sid}"
-        processed = rewrite_html_depth1(raw, banner)
+        processed = rewrite_ebot_native(raw, depth=1)
         out_path = os.path.join(players_dir, fname)
         with open(out_path, "w", encoding="utf-8") as f:
             f.write(processed)
-        return pseudo, True
-    return pseudo, False
+        return p["pseudo"], True
+    return p["pseudo"], False
 
-print(f"\n3. Téléchargement des fiches individuelles des {len(players)} joueurs...")
+print(f"\n3. Traitement des {len(players)} fiches joueurs (design natif eBot)...")
 t0 = time.time()
 with ThreadPoolExecutor(max_workers=6) as executor:
     p_results = list(executor.map(export_player, players))
 ok_p = sum(1 for _, ok in p_results if ok)
-print(f"-> {ok_p}/{len(players)} fiches joueurs exportées en {time.time() - t0:.1f}s")
+print(f"-> {ok_p}/{len(players)} joueurs traités en {time.time() - t0:.1f}s")
 
-# 4. Generate Portal index.html at root of eBot_Pages_Brutes
-index_html = f"""<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <title>GGLan #19 - Portail Officiel des Pages Brutes eBot</title>
-    <link rel="stylesheet" type="text/css" href="css/bootstrap.min.css">
-    <link rel="stylesheet" type="text/css" href="css/bootstrap-responsive.min.css">
-    <style>
-        body {{
-            background-color: #0b0f19;
-            color: #f1f5f9;
-            padding: 2rem;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-        }}
-        .container-custom {{
-            max-width: 1400px;
-            margin: 0 auto;
-        }}
-        header {{
-            text-align: center;
-            margin-bottom: 2.5rem;
-            border-bottom: 1px solid #222f4c;
-            padding-bottom: 1.5rem;
-        }}
-        header h1 {{
-            font-size: 2.6rem;
-            font-weight: 800;
-            color: #38bdf8;
-            margin-bottom: 0.5rem;
-        }}
-        header p {{
-            color: #94a3b8;
-            font-size: 1.15rem;
-        }}
-        .stats-nav {{
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-            gap: 1.25rem;
-            margin-bottom: 2.5rem;
-        }}
-        .nav-card {{
-            background: #151d30;
-            border: 1px solid #222f4c;
-            border-radius: 12px;
-            padding: 1.5rem;
-            text-align: center;
-            transition: transform 0.2s, border-color 0.2s;
-            text-decoration: none;
-            display: block;
-        }}
-        .nav-card:hover {{
-            transform: translateY(-3px);
-            border-color: #38bdf8;
-            text-decoration: none;
-        }}
-        .nav-card-icon {{
-            font-size: 2.5rem;
-            margin-bottom: 0.5rem;
-        }}
-        .nav-card-title {{
-            font-size: 1.3rem;
-            font-weight: 700;
-            color: #f1f5f9;
-            margin-bottom: 0.25rem;
-        }}
-        .nav-card-desc {{
-            color: #94a3b8;
-            font-size: 0.9rem;
-        }}
-        .card-table {{
-            background: #151d30;
-            border: 1px solid #222f4c;
-            border-radius: 12px;
-            padding: 1.5rem;
-        }}
-        .search-box {{
-            width: 100%;
-            max-width: 400px;
-            padding: 0.65rem 1.1rem;
-            border-radius: 8px;
-            border: 1px solid #222f4c;
-            background: #0b0f19;
-            color: #f1f5f9;
-            margin-bottom: 1.25rem;
-            font-size: 0.95rem;
-        }}
-        .search-box:focus {{
-            outline: none;
-            border-color: #38bdf8;
-        }}
-        table {{
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.92rem;
-            text-align: left;
-        }}
-        th {{
-            background: #0e1526;
-            color: #38bdf8;
-            padding: 0.85rem 1rem;
-            border-bottom: 2px solid #222f4c;
-            cursor: pointer;
-            user-select: none;
-        }}
-        th:hover {{
-            background: #1b2640;
-            color: #fff;
-        }}
-        th::after {{ content: ' ⇅'; font-size: 0.8rem; opacity: 0.35; margin-left: 5px; }}
-        th.sorted-asc::after {{ content: ' ▲'; opacity: 1; color: #f59e0b; }}
-        th.sorted-desc::after {{ content: ' ▼'; opacity: 1; color: #f59e0b; }}
-        td {{
-            padding: 0.75rem 1rem;
-            border-bottom: 1px solid #222f4c;
-        }}
-        tr:hover td {{
-            background: rgba(56, 189, 248, 0.05);
-        }}
-        .btn-ebot {{
-            background: #38bdf8;
-            color: #0b0f19;
-            font-weight: 700;
-            padding: 0.35rem 0.85rem;
-            border-radius: 6px;
-            text-decoration: none;
-            display: inline-block;
-            transition: background 0.2s;
-            font-size: 0.85rem;
-        }}
-        .btn-ebot:hover {{
-            background: #7dd3fc;
-            text-decoration: none;
-            color: #0b0f19;
-        }}
-    </style>
-</head>
-<body>
-    <div class="container-custom">
-        <header>
-            <h1>⚡ GGLan #19 - Portail des Pages Brutes eBot</h1>
-            <p>Exportation intégrale des pages officielles du serveur eBot • Consultation 100% Hors-Ligne</p>
-        </header>
+# 4. Generate Root index.html USING THE EXACT NATIVE EBOT TEMPLATE
+print("\n4. Génération de l'index.html avec le template officiel eBot...")
 
-        <!-- Navigation Sections -->
-        <div class="stats-nav">
-            <a href="stats/stats_weapons.html" class="nav-card">
-                <div class="nav-card-icon">🔫</div>
-                <div class="nav-card-title">Top par Armes</div>
-                <div class="nav-card-desc">Frags par arme, Headshots, Efficacité (AK, M4, AWP, Deagle...)</div>
-            </a>
-            <a href="stats/stats_maps.html" class="nav-card">
-                <div class="nav-card-icon">🗺️</div>
-                <div class="nav-card-title">Stats par Maps</div>
-                <div class="nav-card-desc">Nombre de fois jouées, Rounds totaux et Winrate CT / T</div>
-            </a>
-            <a href="stats/stats_global.html" class="nav-card">
-                <div class="nav-card-icon">🌍</div>
-                <div class="nav-card-title">Classement Global</div>
-                <div class="nav-card-desc">Tableau de bord de tous les joueurs et scores individuels eBot</div>
-            </a>
-            <a href="stats/stats_overview.html" class="nav-card">
-                <div class="nav-card-icon">📊</div>
-                <div class="nav-card-title">Vue d'Ensemble</div>
-                <div class="nav-card-desc">Statistiques générales du tournoi eBot</div>
-            </a>
-        </div>
-
-        <!-- Tous les Matchs -->
-        <div class="card-table">
-            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; margin-bottom:1rem;">
-                <h3 style="margin:0; font-size:1.4rem; color:#f1f5f9;">⚔️ Toutes les Pages de Matchs eBot (70 Matchs)</h3>
-                <span style="color:#94a3b8; font-size:0.9rem;">Cliquez sur un en-tête pour trier les colonnes</span>
-            </div>
-            <input type="text" id="searchMatch" class="search-box" placeholder="🔍 Rechercher un match, une équipe ou une map..." onkeyup="filterMatches()">
-            <div style="max-height: 600px; overflow-y: auto; border: 1px solid #222f4c; border-radius: 8px;">
-                <table id="matchTable">
-                    <thead>
-                        <tr>
-                            <th onclick="sortTable(0)">ID</th>
-                            <th onclick="sortTable(1)">Date & Heure</th>
-                            <th onclick="sortTable(2)">Équipe A</th>
-                            <th onclick="sortTable(3)">Score</th>
-                            <th onclick="sortTable(4)">Équipe B</th>
-                            <th onclick="sortTable(5)">Vainqueur</th>
-                            <th onclick="sortTable(6)">Map</th>
-                            <th>Page Brute eBot</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-"""
-
+# Build the 70 match rows in native eBot format
+match_rows_html = ""
 for m in matches:
     mid = str(m["match_id"])
     sa = int(m.get('score_a', 0))
     sb = int(m.get('score_b', 0))
-    index_html += f"""<tr>
-        <td><strong>#{mid}</strong></td>
-        <td style="color:#94a3b8; font-size:0.85rem;">{m.get('date_match')}</td>
-        <td style="font-weight:600; text-align:right;">{m.get('equipe_a')}</td>
-        <td style="text-align:center; font-weight:800; font-size:1.1rem; min-width:80px;">
-            <span style="color:{'#10b981' if sa > sb else ('#ef4444' if sa < sb else 'inherit')}">{sa}</span>
-            -
-            <span style="color:{'#10b981' if sb > sa else ('#ef4444' if sa > sb else 'inherit')}">{sb}</span>
+    ta = m.get('equipe_a', '')
+    tb = m.get('equipe_b', '')
+    map_name = m.get('maps_jouees', '') or 'CS2'
+    
+    sa_str = f"{sa:02d}"
+    sb_str = f"{sb:02d}"
+    
+    if sa > sb:
+        score_html = f'<font color="green">{sa_str}</font> - <font color="red">{sb_str}</font>'
+        color_a = "blue"
+        color_b = "red"
+    elif sb > sa:
+        score_html = f'<font color="red">{sa_str}</font> - <font color="green">{sb_str}</font>'
+        color_a = "red"
+        color_b = "blue"
+    else:
+        score_html = f'<font color="blue">{sa_str}</font> - <font color="blue">{sb_str}</font>'
+        color_a = "blue"
+        color_b = "blue"
+        
+    match_rows_html += f"""
+    <tr>
+        <td width="30" style="padding-left: 10px;">
+            <span style="float:left">#{mid}</span>
         </td>
-        <td style="font-weight:600;">{m.get('equipe_b')}</td>
-        <td style="color:#f59e0b; font-weight:600;">{m.get('vainqueur')}</td>
-        <td><strong>{m.get('maps_jouees') or '-'}</strong></td>
-        <td><a href="matchs/match_{mid}.html" class="btn-ebot" target="_blank">Ouvrir Match #{mid} ↗</a></td>
-    </tr>"""
+        <td width="16">
+            <i class="flag flag-fr"></i>
+        </td>
+        <td width="160" style="padding-left: 10px;">
+            <span style="float:left"><font color="{color_a}">{ta}</font></span>
+        </td>
+        <td width="60">
+            <div class="score" style="text-align:center;" id="score-{mid}">{score_html}</div>
+        </td>
+        <td width="160">
+            <span style="text-align:right; float:right;"><font color="{color_b}">{tb}</font></span>
+        </td>
+        <td width="16">
+            <i class="flag flag-fr"></i>
+        </td>
+        <td width="110" align="center">
+            {map_name}
+        </td>
+        <td width="120">
+            GGLan #19
+        </td>
+        <td width="30" align="center">
+            <img id="flag-{mid}" src="images/icons/flag_green.png" />
+        </td>
+        <td>
+            <div class="status status-{mid}">
+                Finished
+            </div>
+        </td>
+        <td style="padding-left: 5px; text-align:right;">
+            <a href="matchs/match_{mid}.html"><button class="btn btn-inverse btn-mini">Show</button></a>
+        </td>
+    </tr>
+    """
 
-index_html += """
-                    </tbody>
-                </table>
+native_index_template = f"""<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="fr" lang="fr">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <meta name="title" content="eBot :: Your ingame bot manager for CS2" />
+        <title>eBot :: Your ingame bot manager for CS2 - GGLan #19</title>
+        <link rel="shortcut icon" type="image/png" href="favicon.png" />
+
+        <link rel="stylesheet" type="text/css" media="screen" href="css/bootstrap.min.css" />
+        <link rel="stylesheet" type="text/css" media="screen" href="css/bootstrap-responsive.min.css" />
+        <link rel="stylesheet" type="text/css" media="screen" href="css/tipsy.css" />
+        <link rel="stylesheet" type="text/css" media="screen" href="css/datatable.bootstrap.css" />
+        <link rel="stylesheet" type="text/css" media="screen" href="css/flags.css" />
+        <link rel="stylesheet" type="text/css" media="screen" href="css/hubinfo.min.css" />
+        <script type="text/javascript" src="js/jquery-1.8.2.min.js"></script>
+        <script type="text/javascript" src="js/bootstrap.min.js"></script>
+        <script type="text/javascript" src="js/jquery.validate.min.js"></script>
+        <script type="text/javascript" src="js/jquery.tipsy.js"></script>
+        <script type="text/javascript" src="js/jquery.tablesorter.min.js"></script>
+        <script type="text/javascript" src="js/jquery.datatable.min.js"></script>
+        <script type="text/javascript" src="js/datatable.bootstrap.js"></script>
+        <script type="text/javascript" src="js/heatmap.js"></script>
+        <script type="text/javascript" src="js/raphael-min.js"></script>
+        <script type="text/javascript" src="js/jquery.iphone-switch.js"></script>
+        <script type="text/javascript" src="js/hubinfo.min.js"></script>
+        <style type="text/css">
+            body {{
+                padding-top: 60px;
+                padding-bottom: 40px;
+            }}
+            .sidebar-nav {{
+                padding: 9px 0;
+            }}
+        </style>
+    </head>
+    <body>
+        <!-- Top Navbar Native eBot -->
+        <div class="navbar navbar-inverse navbar-fixed-top">
+            <div class="navbar-inner">
+                <div class="container-fluid">
+                    <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </a>
+                    <a class="brand" href="index.html">eBot-CSGO</a>
+                    <div class="nav-collapse collapse">
+                        <ul class="nav">
+                            <li class="active"><a href="index.html">Home</a></li>
+                            <li><a href="stats/stats_overview.html">Statistics</a></li>
+                        </ul>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
 
-    <script>
-        function filterMatches() {
-            var input = document.getElementById("searchMatch");
-            var filter = input.value.toLowerCase();
-            var rows = document.getElementById("matchTable").getElementsByTagName("tbody")[0].getElementsByTagName("tr");
-            for (var i = 0; i < rows.length; i++) {
-                var text = rows[i].textContent.toLowerCase();
-                rows[i].style.display = text.indexOf(filter) > -1 ? "" : "none";
-            }
-        }
+        <div class="container-fluid">
+            <div class="row-fluid">
+                <!-- Left Sidebar Native eBot -->
+                <div class="span2">
+                    <div class="well sidebar-nav">
+                        <script>
+                            function goToMatch() {{
+                                var id = $("#match_id_go").val();
+                                if (id > 0)
+                                    document.location.href = "matchs/match_"+id+".html";
+                            }};
+                        </script>
+                        <ul class="nav nav-list">
+                            <li class="nav-header">Main Menu</li>
+                            <li class="active"><a href="index.html">Home</a></li>
+                            <li><a href="stats/stats_overview.html">Statistics</a></li>
+                            <li class="nav-header">Match Menu</li>
+                            <li class="active"><a href="index.html">Archived Matches</a></li>
+                            <li>
+                                <div style="margin-top: 5px; margin-bottom: 5px;" class="input-append">
+                                    <input class="span8" id="match_id_go" type="text" placeholder="Match ID">
+                                    <button class="btn" type="button" onclick="goToMatch();">Go</button>
+                                </div>
+                            </li>
+                            <li class="nav-header">Statistics</li>
+                            <li><a href="stats/stats_global.html">Global Statistics</a></li>
+                            <li><a href="stats/stats_maps.html">Statistics by Map</a></li>
+                            <li><a href="stats/stats_weapons.html">Statistics by Weapon</a></li>
+                        </ul>
+                    </div>
+                </div>
 
-        var sortOrders = {};
-        function sortTable(colIndex) {
-            var table = document.getElementById("matchTable");
-            var tbody = table.querySelector("tbody");
-            var rows = Array.from(tbody.querySelectorAll("tr"));
-            var isAsc = !sortOrders[colIndex];
-            sortOrders[colIndex] = isAsc;
+                <!-- Main Content Native eBot -->
+                <div class="span10">
+                    <div class="well">
+                        <center><img src="images/ebot.png" alt="eBot CS2" /></center>
+                    </div>
 
-            var ths = table.querySelectorAll("th");
-            ths.forEach(function(th) { th.classList.remove("sorted-asc", "sorted-desc"); });
-            ths[colIndex].classList.add(isAsc ? "sorted-asc" : "sorted-desc");
+                    <div class="row-fluid">
+                        <div class="span8">
+                            <h5>Archived Matches - GGLan #19 (70 Matchs)</h5>
+                            
+                            <table class="table table-striped table-condensed" style="font-size: 0.9em">
+                                <thead>
+                                    <tr>
+                                        <th>#ID</th>
+                                        <th></th>
+                                        <th>Team 1</th>
+                                        <th style="text-align:center;">Score</th>
+                                        <th style="text-align:right;">Team 2</th>
+                                        <th></th>
+                                        <th>Map</th>
+                                        <th>Season</th>
+                                        <th></th>
+                                        <th>Status</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {match_rows_html}
+                                </tbody>
+                            </table>
+                        </div>
 
-            rows.sort(function(a, b) {
-                var tA = a.cells[colIndex].innerText.trim();
-                var tB = b.cells[colIndex].innerText.trim();
-                if (tA.startsWith("#")) tA = tA.substring(1);
-                if (tB.startsWith("#")) tB = tB.substring(1);
-                var nA = parseFloat(tA);
-                var nB = parseFloat(tB);
-                if (!isNaN(nA) && !isNaN(nB)) {
-                    return isAsc ? (nA - nB) : (nB - nA);
-                }
-                return isAsc ? tA.localeCompare(tB, 'fr') : tB.localeCompare(tA, 'fr');
-            });
+                        <div class="span4">
+                            <h5>Informationen</h5>
+                            <div class="well">
+                                <p><i class="icon-arrow-right"></i> <strong>Archives officielles eBot :</strong> Retrouvez l'ensemble des 70 matchs, le détail round par round, les duels, les heatmaps et les classements du tournoi.</p>
+                                <p><i class="icon-arrow-right"></i> Cliquez sur le bouton <strong>Show</strong> pour ouvrir la fiche complète d'une rencontre.</p>
+                                <p><i class="icon-arrow-right"></i> Utilisez le menu de gauche pour consulter le <strong>Top Armes</strong>, les <strong>Stats par Maps</strong> et le <strong>Classement Global</strong>.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-            rows.forEach(function(row) { tbody.appendChild(row); });
-        }
-    </script>
-</body>
+            <!-- Footer Native eBot -->
+            <footer class="footer">
+                <p>&copy; <a target="_blank" href="http://www.esport-tools.net/ebot">eSport-tools</a> 2012-2023 - 3.4 - CS2 - By <a target="_blank" href="https://twitter.com/deStrO_BE">deStrO</a> - Propulsed by <a target="_blank" href="http://twitter.github.com/bootstrap">Bootstrap</a> & <a target="_blank" href="http://www.symfony-project.com">Symfony</a></p>
+            </footer>
+        </div>
+    </body>
 </html>
 """
 
 with open(os.path.join(ebot_dir, "index.html"), "w", encoding="utf-8") as f:
-    f.write(index_html)
+    f.write(native_index_template)
 
-print("\n4. Portail index.html généré avec succès !")
+print("-> index.html généré avec le design 100% natif eBot !")
 
 # 5. Build ZIP archive of eBot_Pages_Brutes
 print("\n5. Compression du pack eBot en archive ZIP...")
@@ -451,6 +379,6 @@ import subprocess
 proc = subprocess.run(cmd, cwd=ebot_dir, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
 if os.path.exists(zip_out):
     sz_mb = os.path.getsize(zip_out) / (1024 * 1024)
-    print(f"-> Archive {zip_out} créée avec succès ({sz_mb:.1f} Mo)")
+    print(f"-> Archive {zip_out} mise à jour avec succès ({sz_mb:.1f} Mo)")
 
-print("\n=== TOUTES LES PAGES BRUTES EBOT SONT EXPORTEES ET PRETES ! ===")
+print("\n=== TOUTES LES PAGES SONT A 100% AVEC LE DESIGN NATIF D'EBOT ! ===")
