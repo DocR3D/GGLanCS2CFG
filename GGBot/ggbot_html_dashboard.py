@@ -368,25 +368,6 @@ html += """
                     </ul>
                 </div>
 
-                <!-- Kills à travers la smoke -->
-                <div class="award-card">
-                    <div class="award-header">
-                        <span class="award-icon">💨</span>
-                        <div>
-                            <div class="award-title">Le "Smoke Hacker"</div>
-                            <div class="award-subtitle">Kills à travers la fumée</div>
-                        </div>
-                    </div>
-                    <ul class="award-list">
-"""
-
-for item in awards["top_smoke"][:5]:
-    html += f"""<li class="award-item"><span class="award-name">{item['pseudo']}</span><span class="award-val">{item['count']} kills</span></li>"""
-
-html += """
-                    </ul>
-                </div>
-
                 <!-- No-Scope Sniper -->
                 <div class="award-card">
                     <div class="award-header">
